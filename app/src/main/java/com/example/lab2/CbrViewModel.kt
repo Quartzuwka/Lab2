@@ -11,20 +11,21 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import com.example.lab2.network.CbrXmlParser
+import com.example.lab2.network.CurrencyItem
 import com.example.lab2.network.KtorClientWebService
 import com.example.lab2.network.WebService
 import java.io.FileInputStream
 
 class CbrViewModel(application: Application) : ViewModel() {
 
-
-
+    var parsedList = mutableStateOf<List<CurrencyItem>>(emptyList())
+        private set // Закрытый сеттер, чтобы избежать изменения извне
+    val webService: WebService = KtorClientWebService()
     init {
-        val webService: WebService = KtorClientWebService()
             viewModelScope.launch() {
                 val xmlString = webService.getXMlString("https://www.cbr.ru//scripts/XML_daily.asp")
-                val parsed = CbrXmlParser().parsing(xmlString)
-                println(parsed)
+                parsedList.value = CbrXmlParser().parsing(xmlString)
+                println(parsedList)
             }
         }
 }
