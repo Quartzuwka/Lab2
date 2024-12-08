@@ -7,6 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.snapping.SnapPosition
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
@@ -34,6 +35,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
@@ -93,17 +96,7 @@ class MainActivity : ComponentActivity() {
         // Хранит текст для кнопки "Custom"
         var firstButtonSelection = remember { mutableStateOf("Custom1") }
         var secondButtonSelection = remember { mutableStateOf("Custom2") }
-
-
-        // Слушаем изменения savedStateHandle
-        val lifecycleOwner = LocalLifecycleOwner.current
-        navController.currentBackStackEntry?.savedStateHandle
-            ?.getLiveData<String>("selectedItem")
-            ?.observe(lifecycleOwner) { selectedItem ->
-                firstButtonSelection.value = selectedItem
-                selectedButtonIndex.value = 3
-            }
-
+        val mainUiState = viewModel.uiState.collectAsState()
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
@@ -117,19 +110,38 @@ class MainActivity : ComponentActivity() {
                 OutlinedButton(
 
                     modifier = Modifier.weight(1f),
-                    onClick = { navController.navigate("selection_screen") }
+                    onClick = {
+                        viewModel.setCurrentButton("first")
+                        navController.navigate("selection_screen") }
                 ) {
-                    Text(text = buttons[0])
+                    Text(text = mainUiState.value.firstButtonText)
                 }
                 OutlinedButton(
-
                     modifier = Modifier.weight(1f),
-                    onClick = { }
+                    onClick = {
+                        viewModel.setCurrentButton("second")
+                        navController.navigate("selection_screen")
+                    }
                 ) {
-                    Text(text = buttons[1])
+                    Text(text = mainUiState.value.secondButtonText)
                 }
 
                 }
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    modifier = Modifier.weight(1f),
+                    value = "Hello Work",
+                    onValueChange = {}
+                )
+                Text(
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.weight(1f),
+                    text = "123"
+                )
+            }
             }
         }
     }
@@ -138,25 +150,26 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun SelectionScreen(vm: CbrViewModel, navController: NavController) {
         val itemList = vm.parsedList
-
+        val mainUiState = vm.uiState.collectAsState()
 
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
+
             items(itemList.value) { item ->
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp)
                         .clickable {
-
-                            // Возвращаем выбранное значение на первый экран
-                            navController.previousBackStackEntry
-                                ?.savedStateHandle
-                                ?.set("selectedItem", item.name)
-                            navController.popBackStack() // Возврат на первый экран
+                            if (mainUiState.value.currentButton == "first") {
+                                vm.putFirstItem(item)
+                            } else {
+                                vm.putSecondItem(item)
+                            }
+                            navController.popBackStack()
                         },
                     contentAlignment = Alignment.Center
 
