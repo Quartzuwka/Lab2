@@ -2,6 +2,7 @@ package com.example.lab2
 
 
 import android.app.Application
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
@@ -28,4 +29,6 @@ class CbrViewModel(application: Application) : ViewModel() {
                 println(parsedList)
             }
         }
+
+
 }

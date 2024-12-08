@@ -6,7 +6,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -17,9 +16,6 @@ import com.example.lab2.ui.theme.Lab2Theme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -34,22 +30,16 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.semantics.Role.Companion.DropdownList
-
-
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.navigation.NavController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 
-import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Divider
-import androidx.compose.ui.semantics.Role.Companion.DropdownList
-import androidx.compose.ui.window.Popup
-import androidx.compose.ui.window.PopupProperties
-import com.example.lab2.network.CurrencyItem
 
 
 class CurrencyViewModelFactory(val application: Application) :
@@ -81,83 +71,107 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun App(viewModel: CbrViewModel = viewModel()) {
+        val navController = rememberNavController()
 
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(2.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
+        NavHost(
+            navController = navController,
+            startDestination = "main_screen"
         ) {
-            Column(
-                verticalArrangement = Arrangement.Center, // Aligns children vertically
-                horizontalAlignment = Alignment.CenterHorizontally // Centers children horizontally
-            ) {
-                ToggleableButtonsRow(viewModel)
-                Text("123")
+            composable("main_screen") {
+                MainScreen(viewModel, navController)
             }
-
-            Column(
-                verticalArrangement = Arrangement.Center, // Aligns children vertically
-                horizontalAlignment = Alignment.CenterHorizontally // Centers children horizontally
-            ) {
-                ToggleableButtonsRow(viewModel)
-                Text("123")
+            composable("selection_screen") {
+                SelectionScreen(viewModel, navController)
             }
         }
     }
 
     @Composable
-    fun ToggleableButtonsRow(vm: CbrViewModel = viewModel()) {
+    fun MainScreen(viewModel: CbrViewModel, navController: NavController) {
         // Хранит индекс активной кнопки
         var selectedButtonIndex = remember { mutableStateOf(-1) }
-        // Хранит состояние выбора для четвёртой кнопки
-        var fourthButtonSelection = remember { mutableStateOf("Custom") }
-        // Состояние меню (открыто/закрыто)
-        var isDropdownMenuExpanded = remember { mutableStateOf(false) }
+        // Хранит текст для кнопки "Custom"
+        var firstButtonSelection = remember { mutableStateOf("Custom1") }
+        var secondButtonSelection = remember { mutableStateOf("Custom2") }
 
-        val itemList = listOf<String>("Item 1", "Item 2", "Item 3", "Item 4", "Item 5", "Item 6")
-        var selectedIndex = rememberSaveable { mutableStateOf(0) }
 
-        var buttonModifier = Modifier.width(100.dp)
-
+        // Слушаем изменения savedStateHandle
+        val lifecycleOwner = LocalLifecycleOwner.current
+        navController.currentBackStackEntry?.savedStateHandle
+            ?.getLiveData<String>("selectedItem")
+            ?.observe(lifecycleOwner) { selectedItem ->
+                firstButtonSelection.value = selectedItem
+                selectedButtonIndex.value = 3
+            }
 
         Column(
-            modifier = Modifier.wrapContentSize(Alignment.TopStart),
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Ряд с основными кнопками
             Row(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                val buttons = listOf("RUB", "USD", "EUR", fourthButtonSelection.value)
+                val buttons = listOf(firstButtonSelection.value, secondButtonSelection.value)
+                OutlinedButton(
 
-                buttons.forEachIndexed { index, text ->
-                    Box(
-                        modifier = Modifier
-                            .padding(horizontal = 4.dp)
-                            .size(40.dp, 40.dp)
-                            .background(
-                                color = if (selectedButtonIndex.value == index) Color.Green else Color.Gray,
-                                shape = RectangleShape
-                            )
-                            .clickable {
-                                selectedButtonIndex.value =
-                                    if (selectedButtonIndex.value == index) -1 else index
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = text,
-                            color = Color.White,
-                            textAlign = TextAlign.Center
-                        )
-                    }
+                    modifier = Modifier.weight(1f),
+                    onClick = { navController.navigate("selection_screen") }
+                ) {
+                    Text(text = buttons[0])
+                }
+                OutlinedButton(
+
+                    modifier = Modifier.weight(1f),
+                    onClick = { }
+                ) {
+                    Text(text = buttons[1])
+                }
+
                 }
             }
         }
     }
-}
+
+
+    @Composable
+    fun SelectionScreen(vm: CbrViewModel, navController: NavController) {
+        val itemList = vm.parsedList
+
+
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            items(itemList.value) { item ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                        .clickable {
+
+                            // Возвращаем выбранное значение на первый экран
+                            navController.previousBackStackEntry
+                                ?.savedStateHandle
+                                ?.set("selectedItem", item.name)
+                            navController.popBackStack() // Возврат на первый экран
+                        },
+                    contentAlignment = Alignment.Center
+
+                ) {
+                    Text(
+                        text = item.name,
+                        modifier = Modifier
+                            .background(Color.LightGray)
+                            .padding(16.dp),
+                        fontSize = 20.sp,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        }
+    }
 
 
