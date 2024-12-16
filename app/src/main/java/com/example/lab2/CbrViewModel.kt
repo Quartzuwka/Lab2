@@ -2,14 +2,10 @@ package com.example.lab2
 
 
 import android.app.Application
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import com.example.lab2.network.CbrXmlParser
 import com.example.lab2.network.CurrencyItem
@@ -17,12 +13,11 @@ import com.example.lab2.network.KtorClientWebService
 import com.example.lab2.network.WebService
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
-import java.io.FileInputStream
+import kotlin.Float
+import kotlin.Int
+
 
 class CbrViewModel(application: Application) : ViewModel() {
-
-//    private val _uiState = MutableStateFlow(uiState())
-//    val uiState: StateFlow<uiState> = _uiState.asStateFlow()
 
     private val _uiState = MutableStateFlow(uiState())
     val uiState: StateFlow<uiState> get() = _uiState
@@ -46,7 +41,9 @@ class CbrViewModel(application: Application) : ViewModel() {
     fun putFirstItem(item: CurrencyItem) {
         _uiState.update { currentState ->
             currentState.copy(
-                firstButtonText = item.name
+                firstButtonText = item.name,
+                firstValue = item.value,
+                firstNominal = item.nominal,
             )
         }
         CurrentItem = item
@@ -54,7 +51,9 @@ class CbrViewModel(application: Application) : ViewModel() {
     fun putSecondItem(item: CurrencyItem) {
         _uiState.update { currentState ->
             currentState.copy(
-                secondButtonText = item.name
+                secondButtonText = item.name,
+                secondValue = item.value,
+                secondNominal = item.nominal,
             )
         }
         CurrentItem = item
@@ -66,6 +65,20 @@ class CbrViewModel(application: Application) : ViewModel() {
                 currentButton = cur
             )
         }
+    }
+    fun updateNumber(firstNumber: Float) {
+        val firstDiv = uiState.value.firstValue/uiState.value.firstNominal
+        val firstMult = firstDiv * firstNumber
+        val secondDiv = uiState.value.secondValue/uiState.value.secondNominal
+
+
+        _uiState.update { currentState ->
+            currentState.copy(
+                inputValue = firstNumber,
+                outputValue = firstMult / secondDiv
+            )
+        }
+
     }
 
 

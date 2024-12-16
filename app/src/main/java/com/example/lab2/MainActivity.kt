@@ -133,13 +133,16 @@ class MainActivity : ComponentActivity() {
             ) {
                 OutlinedTextField(
                     modifier = Modifier.weight(1f),
-                    value = "Hello Work",
-                    onValueChange = {}
+                    value = mainUiState.value.inputValue.toString(),
+                    onValueChange = { input ->
+                        val newNumber = input.toFloat()  // Конвертация текста в Int (с обработкой ошибок)
+                        viewModel.updateNumber(newNumber) // Обновление состояния
+                    }
                 )
                 Text(
                     textAlign = TextAlign.Center,
                     modifier = Modifier.weight(1f),
-                    text = "123"
+                    text = mainUiState.value.outputValue.toString()
                 )
             }
             }

@@ -11,5 +11,7 @@ data class uiState(
     val secondValue: Float = 0F,
     val secondNominal: Int = 0,
     val secondName: String = "",
-    val secondCharCode: String = ""
+    val secondCharCode: String = "",
+    val inputValue: Float = 0F,
+    val outputValue: Float = 0F
 )
